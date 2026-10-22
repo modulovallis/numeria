@@ -85,7 +85,7 @@ class _LevelScreenState extends State<LevelScreen> {
     final question = _questions[_index];
 
     return Scaffold(
-      appBar: AppBar(title: Text(t.t(widget.level.titleKey))),
+      appBar: AppBar(title: Text(widget.level.displayTitle(t))),
       body: Container(
         decoration: numeriaBackground(colors: [Colors.white, widget.themeColor.withOpacity(0.12)]),
         child: SafeArea(

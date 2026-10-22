@@ -77,4 +77,48 @@ class AppState extends ChangeNotifier {
     _freeQuestionsAnsweredToday = 0;
     notifyListeners();
   }
+
+  // --- Phase 2 features (Section 8 of the design document) ---
+
+  /// Grades marked "available offline" by the Offline Mode manager. This
+  /// prototype simulates the download (everything already ships in the
+  /// app); a production build would actually cache the relevant content
+  /// bundle locally.
+  final Set<String> downloadedGradeIds = {};
+
+  bool isGradeDownloaded(String gradeId) => downloadedGradeIds.contains(gradeId);
+
+  void toggleGradeDownload(String gradeId) {
+    if (downloadedGradeIds.contains(gradeId)) {
+      downloadedGradeIds.remove(gradeId);
+    } else {
+      downloadedGradeIds.add(gradeId);
+    }
+    notifyListeners();
+  }
+
+  /// Math Moments is a free, once-a-day mini-challenge — a retention hook
+  /// rather than a premium feature, so it's available on every tier.
+  DateTime? _lastMathMomentDate;
+
+  bool get mathMomentAvailableToday {
+    final last = _lastMathMomentDate;
+    if (last == null) return true;
+    final now = DateTime.now();
+    return now.year != last.year || now.month != last.month || now.day != last.day;
+  }
+
+  void markMathMomentClaimedToday() {
+    _lastMathMomentDate = DateTime.now();
+    notifyListeners();
+  }
+
+  /// Generic reward hook used by Math Moments, Co-op Quests and the
+  /// Family Challenge to grant bonus XP/coins outside the normal level
+  /// completion flow.
+  void awardBonus({int xp = 0, int coins = 0}) {
+    this.xp += xp;
+    this.coins += coins;
+    notifyListeners();
+  }
 }

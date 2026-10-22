@@ -4,9 +4,13 @@ import 'package:provider/provider.dart';
 import '../core/theme.dart';
 import '../data/curriculum_data.dart';
 import '../l10n/app_localizations.dart';
+import '../logic/premium_gate.dart';
 import '../models/curriculum.dart';
 import '../state/app_state.dart';
 import '../widgets/stat_chip.dart';
+import 'coop_quest_screen.dart';
+import 'family_challenge_screen.dart';
+import 'math_moment_screen.dart';
 import 'paywall_screen.dart';
 import 'realm_map_screen.dart';
 import 'settings_screen.dart';
@@ -59,6 +63,34 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                child: _MathMomentBanner(),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _QuickFeatureButton(
+                        icon: Icons.diversity_3_rounded,
+                        label: t.t('coop_quick_label'),
+                        color: NumeriaColors.blue,
+                        onTap: () => openPremiumFeature(context, (_) => const CoopQuestScreen()),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _QuickFeatureButton(
+                        icon: Icons.family_restroom_rounded,
+                        label: t.t('family_quick_label'),
+                        color: NumeriaColors.pink,
+                        onTap: () => openPremiumFeature(context, (_) => const FamilyChallengeScreen()),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Align(
@@ -156,6 +188,69 @@ class _KingdomCard extends StatelessWidget {
               const Icon(Icons.chevron_right_rounded, color: Colors.black38),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MathMomentBanner extends StatelessWidget {
+  const _MathMomentBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final appState = context.watch<AppState>();
+    final available = appState.mathMomentAvailableToday;
+
+    return Card(
+      color: NumeriaColors.yellow.withOpacity(0.25),
+      child: ListTile(
+        leading: const Text('🌞', style: TextStyle(fontSize: 26)),
+        title: Text(t.t('math_moment_card_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(
+          available ? t.t('math_moment_card_subtitle_available') : t.t('math_moment_card_subtitle_done'),
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black38),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MathMomentScreen()),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickFeatureButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickFeatureButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 12)),
+          ],
         ),
       ),
     );

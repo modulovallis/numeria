@@ -60,7 +60,7 @@ class LevelNode extends StatelessWidget {
             SizedBox(
               width: 90,
               child: Text(
-                t.t(level.titleKey),
+                level.displayTitle(t),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

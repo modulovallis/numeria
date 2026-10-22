@@ -46,21 +46,41 @@ generated fresh on every cloud build) rather than hand-authored.
 - **Language switcher** — all six languages from the brief (English, Italian,
   German, Spanish, Portuguese, French) as first-class locales, selectable on
   first launch and again anytime from Settings. See `lib/l10n/app_localizations.dart`.
-- **Kingdom → Realm → Level map** for a sample of Grade 1 and Grade 2 content
-  (`lib/data/curriculum_data.dart`), with mastery-based unlocking (finish a
-  level to unlock the next).
+- **Kingdom → Strand → Level map** spanning Grade 1 through Grade 6 (ages
+  ~6–12) in `lib/data/curriculum_data.dart`. Inside each Kingdom (grade), a
+  child picks *which type of exercise* to practice — additions, subtractions,
+  times tables, division, fractions, decimals, early algebra, geometry,
+  measurement, and data/averages — and every strand is unlocked independently
+  of the others, so no exercise type blocks any other. Levels within a strand
+  still unlock in order as the child demonstrates mastery.
 - **Core gamification loop** — XP, coins, streak, and the "Confidence Meter"
   differentiator from the design document, plus stars/rewards on level
   completion.
 - **Explain-It-Back Coach** mascot hint shown after an incorrect answer,
-  localized in the child's selected language.
+  localized in the child's selected language, now covering every exercise
+  type (including division, fractions, algebra, and geometry hints).
+- **Math Moments** — a free, once-a-day real-world mini-challenge (cooking,
+  shopping, game day, trip planning) with a bonus XP/coin reward, resetting
+  every calendar day. See `lib/screens/math_moment_screen.dart`.
+- **Co-op Quests** — a Monthly/Lifetime pass-and-play mode where two kids
+  share one device and work toward a combined team score.
+  See `lib/screens/coop_quest_screen.dart`.
+- **Family Challenge** — a Monthly/Lifetime mode where the child plays a
+  round, then hands the device to a grown-up for the same number of
+  (harder) questions, comparing scores afterward.
+  See `lib/screens/family_challenge_screen.dart`.
+- **Offline Downloads manager** — a Monthly/Lifetime screen for marking
+  Kingdoms as "available offline" (simulated with a short download delay).
+  See `lib/screens/offline_manager_screen.dart`.
 - **Non-billing paywall screen** reflecting the Free / Monthly / Lifetime
   pricing from Section 8 of the design document, gated by a demo "parent
   check" dialog (no real payment is processed — see Section 8/10 for the
-  production Play Billing + parental-consent approach).
+  production Play Billing + parental-consent approach). Co-op Quests, Family
+  Challenge and Offline Downloads all route here when accessed on the Free
+  tier.
 - **Settings screen** with the language switcher, a demo tier switcher (to
-  preview how free-tier gating changes), and teaser cards for the Phase 2
-  features (Co-op Quests, Family Challenge, Offline Mode, Math Moments).
+  preview how free-tier gating changes), and real entry points into all four
+  Phase 2 features above (no longer "coming soon" teasers).
 
 Everything is in-memory for this prototype (no persistence, no backend) —
 see Section 11 of the design document for the recommended production
@@ -72,23 +92,28 @@ mastery engine).
 ```
 lib/
   core/theme.dart              Brand colors + Material theme
-  state/app_state.dart         In-memory app state (XP, coins, tier, progress)
-  models/curriculum.dart       Grade / Realm / Level data model
-  data/curriculum_data.dart    Sample Grade 1–2 curriculum content
+  state/app_state.dart         In-memory app state (XP, coins, tier, progress,
+                                offline downloads, Math Moment cooldown)
+  models/curriculum.dart       Grade / Realm (strand) / Level data model
+  data/curriculum_data.dart    Grade 1–6 curriculum content (every strand)
   logic/question_generator.dart  Procedural question generation per topic
+  logic/premium_gate.dart      Routes a feature screen or the Paywall based
+                                on the account tier
   l10n/app_localizations.dart  Six-language translation strings
   widgets/                     Reusable UI: stat chips, confidence meter,
                                 mascot hint bubble, level map node, parent gate
   screens/                     Splash → Language Select → Home (Kingdoms) →
-                                Realm Map → Level (gameplay) → Result,
-                                plus Paywall and Settings
+                                Strand Select → Level List → Level (gameplay)
+                                → Result, plus Paywall, Settings, Math
+                                Moment, Co-op Quest, Family Challenge and
+                                Offline Manager
 ```
 
 ## Extending it
 
-- Add more grades/realms/levels in `curriculum_data.dart` — the map screens
-  and gameplay loop are fully data-driven, so new content doesn't require UI
-  changes.
+- Add more grades/strands/levels in `curriculum_data.dart` using the
+  `_tiers(...)` helper — the map screens and gameplay loop are fully
+  data-driven, so new content doesn't require UI changes.
 - Add more question topics by extending `TopicType` and `QuestionGenerator`.
 - Add more languages by adding a new entry to `_strings` and
   `kSupportedLocales` in `app_localizations.dart`.

@@ -3,9 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
+import '../logic/premium_gate.dart';
 import '../state/app_state.dart';
 import '../widgets/confidence_meter.dart';
 import '../widgets/stat_chip.dart';
+import 'coop_quest_screen.dart';
+import 'family_challenge_screen.dart';
+import 'math_moment_screen.dart';
+import 'offline_manager_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -96,10 +101,32 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              _ComingSoonTile(icon: Icons.diversity_3_rounded, text: t.t('coop_mode_teaser'), badge: t.t('coming_soon_badge')),
-              _ComingSoonTile(icon: Icons.family_restroom_rounded, text: t.t('family_mode_teaser'), badge: t.t('coming_soon_badge')),
-              _ComingSoonTile(icon: Icons.wifi_off_rounded, text: t.t('offline_mode_teaser'), badge: t.t('coming_soon_badge')),
-              _ComingSoonTile(icon: Icons.explore_rounded, text: t.t('math_moments_teaser'), badge: t.t('coming_soon_badge')),
+              _FeatureTile(
+                icon: Icons.diversity_3_rounded,
+                text: t.t('coop_mode_teaser'),
+                locked: !appState.hasPremiumFeatures,
+                onTap: () => openPremiumFeature(context, (_) => const CoopQuestScreen()),
+              ),
+              _FeatureTile(
+                icon: Icons.family_restroom_rounded,
+                text: t.t('family_mode_teaser'),
+                locked: !appState.hasPremiumFeatures,
+                onTap: () => openPremiumFeature(context, (_) => const FamilyChallengeScreen()),
+              ),
+              _FeatureTile(
+                icon: Icons.wifi_off_rounded,
+                text: t.t('offline_mode_teaser'),
+                locked: !appState.hasPremiumFeatures,
+                onTap: () => openPremiumFeature(context, (_) => const OfflineManagerScreen()),
+              ),
+              _FeatureTile(
+                icon: Icons.explore_rounded,
+                text: t.t('math_moments_teaser'),
+                locked: false,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MathMomentScreen()),
+                ),
+              ),
             ],
           ),
         ),
@@ -108,28 +135,36 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-class _ComingSoonTile extends StatelessWidget {
+class _FeatureTile extends StatelessWidget {
   final IconData icon;
   final String text;
-  final String badge;
-  const _ComingSoonTile({required this.icon, required this.text, required this.badge});
+  final bool locked;
+  final VoidCallback onTap;
+  const _FeatureTile({required this.icon, required this.text, required this.locked, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       color: Colors.white,
       child: ListTile(
         leading: Icon(icon, color: NumeriaColors.teal),
         title: Text(text, style: const TextStyle(fontSize: 13)),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: NumeriaColors.orange.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(badge, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: NumeriaColors.orange)),
-        ),
+        trailing: locked
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: NumeriaColors.orange.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  t.t('premium_badge'),
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: NumeriaColors.orange),
+                ),
+              )
+            : const Icon(Icons.chevron_right_rounded, color: Colors.black38),
+        onTap: onTap,
       ),
     );
   }
