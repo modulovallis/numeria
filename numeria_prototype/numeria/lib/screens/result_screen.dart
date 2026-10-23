@@ -10,6 +10,12 @@ class ResultScreen extends StatelessWidget {
   final int coinsEarned;
   final Color themeColor;
 
+  /// When provided, shows a "Play Again" button that replaces this screen
+  /// with a fresh attempt (new random questions) at the same level — see
+  /// Section 7 of the design document on encouraging retries to improve a
+  /// star score rather than treating a level as "done forever".
+  final WidgetBuilder? replayBuilder;
+
   const ResultScreen({
     super.key,
     required this.level,
@@ -17,6 +23,7 @@ class ResultScreen extends StatelessWidget {
     required this.xpEarned,
     required this.coinsEarned,
     required this.themeColor,
+    this.replayBuilder,
   });
 
   @override
@@ -65,10 +72,24 @@ class ResultScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(t.t('back_to_map_button')),
-                ),
+                if (replayBuilder != null) ...[
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: replayBuilder!),
+                    ),
+                    icon: const Icon(Icons.replay_rounded),
+                    label: Text(t.t('play_again_button')),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(t.t('back_to_map_button')),
+                  ),
+                ] else
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(t.t('back_to_map_button')),
+                  ),
               ],
             ),
           ),

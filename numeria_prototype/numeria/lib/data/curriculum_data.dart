@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
+import '../logic/question_generator.dart';
 import '../models/curriculum.dart';
 
 /// Curriculum content for the prototype, spanning Grade 1 through Grade 6
@@ -14,14 +15,19 @@ import '../models/curriculum.dart';
 class CurriculumData {
   /// Builds a simple tiered chain of levels for one strand: level 1 is the
   /// easiest, each subsequent level needs the previous one, and the last
-  /// tier is always the "boss" level for that strand.
+  /// tier is always the "boss" level for that strand. Each tier also gets
+  /// an automatically-chosen [QuestionKind] via [_kindFor] so a strand
+  /// naturally mixes multiple choice, True/False and typed-answer
+  /// questions instead of staying one format end to end — see Section 7 of
+  /// the design document and the competitor research behind this update
+  /// (Prodigy/SplashLearn/DoodleMaths all vary interaction style).
   static List<LevelDef> _tiers({
     required String idPrefix,
     required TopicType topic,
     required String topicLabelKey,
     required List<int> maxValues,
     List<String> firstPrerequisites = const [],
-    int questionCount = 5,
+    int questionCount = 20,
   }) {
     final levels = <LevelDef>[];
     for (var i = 0; i < maxValues.length; i++) {
@@ -34,10 +40,50 @@ class CurriculumData {
         maxValue: maxValues[i],
         questionCount: questionCount,
         isBoss: isLast,
+        kind: _kindFor(topic, i, maxValues.length),
         prerequisiteIds: i == 0 ? firstPrerequisites : ['${idPrefix}_$i'],
       ));
     }
     return levels;
+  }
+
+  /// Picks the interaction style for one tier of a strand: the final
+  /// ("boss") tier becomes a typed-answer challenge when the topic's
+  /// answers are plain numbers, the middle tier becomes a True/False
+  /// round when the topic's prompt shape supports it, and every other
+  /// tier (including the always-safe first, easiest tier) stays multiple
+  /// choice.
+  static QuestionKind _kindFor(TopicType topic, int tierIndex, int tierCount) {
+    final isLast = tierIndex == tierCount - 1;
+    if (isLast && QuestionGenerator.typedInputSafeTopics.contains(topic)) {
+      return QuestionKind.typedInput;
+    }
+    if (tierIndex == 1 && QuestionGenerator.trueFalseSafeTopics.contains(topic)) {
+      return QuestionKind.trueFalse;
+    }
+    return QuestionKind.multipleChoice;
+  }
+
+  /// A bonus, always-replayable tap-to-match level appended after a
+  /// strand's normal tiers — only needs the strand's first tier completed
+  /// to unlock, since it's a fun variant rather than another difficulty
+  /// step.
+  static LevelDef _matchBonus({
+    required String idPrefix,
+    required TopicType topic,
+    required String topicLabelKey,
+    required int maxValue,
+  }) {
+    return LevelDef(
+      id: '${idPrefix}_match',
+      topic: topic,
+      topicLabelKey: topicLabelKey,
+      tierNumber: 0,
+      maxValue: maxValue,
+      questionCount: 6, // pair count for the matching puzzle (12 cards fits one screen)
+      kind: QuestionKind.matching,
+      prerequisiteIds: ['${idPrefix}_1'],
+    );
   }
 
   // ---------------------------------------------------------------------
@@ -149,8 +195,8 @@ class CurriculumData {
         titleKey: 'realm_multiplication_sparkle',
         color: NumeriaColors.pink,
         icon: Icons.close_rounded,
-        levels: const [
-          LevelDef(
+        levels: [
+          const LevelDef(
             // Freely choosable — doesn't require finishing Place Value
             // Mines first, so multiplication is always one tap away.
             id: 'g2_mult_1',
@@ -158,13 +204,19 @@ class CurriculumData {
             topic: TopicType.multiplication,
             maxValue: 5,
           ),
-          LevelDef(
+          const LevelDef(
             id: 'g2_mult_2',
             titleKey: 'level_multiplication_10_boss',
             topic: TopicType.multiplication,
             maxValue: 10,
             prerequisiteIds: ['g2_mult_1'],
             isBoss: true,
+          ),
+          _matchBonus(
+            idPrefix: 'g2_mult',
+            topic: TopicType.multiplication,
+            topicLabelKey: 'realm_multiplication_sparkle',
+            maxValue: 5,
           ),
         ],
       ),
@@ -198,12 +250,20 @@ class CurriculumData {
         titleKey: 'realm_multiplication_sparkle',
         color: NumeriaColors.pink,
         icon: Icons.close_rounded,
-        levels: _tiers(
-          idPrefix: 'g3_mult',
-          topic: TopicType.multiplication,
-          topicLabelKey: 'realm_multiplication_sparkle',
-          maxValues: const [6, 10, 12],
-        ),
+        levels: [
+          ..._tiers(
+            idPrefix: 'g3_mult',
+            topic: TopicType.multiplication,
+            topicLabelKey: 'realm_multiplication_sparkle',
+            maxValues: const [6, 10, 12],
+          ),
+          _matchBonus(
+            idPrefix: 'g3_mult',
+            topic: TopicType.multiplication,
+            topicLabelKey: 'realm_multiplication_sparkle',
+            maxValue: 10,
+          ),
+        ],
       ),
       RealmDef(
         id: 'g3_division',
@@ -222,12 +282,20 @@ class CurriculumData {
         titleKey: 'realm_fractions_falls',
         color: NumeriaColors.purple,
         icon: Icons.pie_chart_rounded,
-        levels: _tiers(
-          idPrefix: 'g3_frac',
-          topic: TopicType.fractions,
-          topicLabelKey: 'realm_fractions_falls',
-          maxValues: const [4, 6, 8],
-        ),
+        levels: [
+          ..._tiers(
+            idPrefix: 'g3_frac',
+            topic: TopicType.fractions,
+            topicLabelKey: 'realm_fractions_falls',
+            maxValues: const [4, 6, 8],
+          ),
+          _matchBonus(
+            idPrefix: 'g3_frac',
+            topic: TopicType.fractions,
+            topicLabelKey: 'realm_fractions_falls',
+            maxValue: 6,
+          ),
+        ],
       ),
     ],
   );
@@ -247,12 +315,20 @@ class CurriculumData {
         titleKey: 'realm_multiplication_sparkle',
         color: NumeriaColors.pink,
         icon: Icons.close_rounded,
-        levels: _tiers(
-          idPrefix: 'g4_mult',
-          topic: TopicType.multiplication,
-          topicLabelKey: 'realm_multiplication_sparkle',
-          maxValues: const [12, 15, 20],
-        ),
+        levels: [
+          ..._tiers(
+            idPrefix: 'g4_mult',
+            topic: TopicType.multiplication,
+            topicLabelKey: 'realm_multiplication_sparkle',
+            maxValues: const [12, 15, 20],
+          ),
+          _matchBonus(
+            idPrefix: 'g4_mult',
+            topic: TopicType.multiplication,
+            topicLabelKey: 'realm_multiplication_sparkle',
+            maxValue: 12,
+          ),
+        ],
       ),
       RealmDef(
         id: 'g4_division',
@@ -271,12 +347,20 @@ class CurriculumData {
         titleKey: 'realm_fractions_falls',
         color: NumeriaColors.purple,
         icon: Icons.pie_chart_rounded,
-        levels: _tiers(
-          idPrefix: 'g4_frac',
-          topic: TopicType.fractions,
-          topicLabelKey: 'realm_fractions_falls',
-          maxValues: const [8, 10, 12],
-        ),
+        levels: [
+          ..._tiers(
+            idPrefix: 'g4_frac',
+            topic: TopicType.fractions,
+            topicLabelKey: 'realm_fractions_falls',
+            maxValues: const [8, 10, 12],
+          ),
+          _matchBonus(
+            idPrefix: 'g4_frac',
+            topic: TopicType.fractions,
+            topicLabelKey: 'realm_fractions_falls',
+            maxValue: 10,
+          ),
+        ],
       ),
       RealmDef(
         id: 'g4_decimals',
@@ -320,12 +404,20 @@ class CurriculumData {
         titleKey: 'realm_fractions_falls',
         color: NumeriaColors.purple,
         icon: Icons.pie_chart_rounded,
-        levels: _tiers(
-          idPrefix: 'g5_frac',
-          topic: TopicType.fractions,
-          topicLabelKey: 'realm_fractions_falls',
-          maxValues: const [10, 15, 20],
-        ),
+        levels: [
+          ..._tiers(
+            idPrefix: 'g5_frac',
+            topic: TopicType.fractions,
+            topicLabelKey: 'realm_fractions_falls',
+            maxValues: const [10, 15, 20],
+          ),
+          _matchBonus(
+            idPrefix: 'g5_frac',
+            topic: TopicType.fractions,
+            topicLabelKey: 'realm_fractions_falls',
+            maxValue: 12,
+          ),
+        ],
       ),
       RealmDef(
         id: 'g5_decimals',
@@ -417,12 +509,20 @@ class CurriculumData {
         titleKey: 'realm_fractions_falls',
         color: NumeriaColors.purple,
         icon: Icons.pie_chart_rounded,
-        levels: _tiers(
-          idPrefix: 'g6_frac',
-          topic: TopicType.fractions,
-          topicLabelKey: 'realm_fractions_falls',
-          maxValues: const [15, 25, 35],
-        ),
+        levels: [
+          ..._tiers(
+            idPrefix: 'g6_frac',
+            topic: TopicType.fractions,
+            topicLabelKey: 'realm_fractions_falls',
+            maxValues: const [15, 25, 35],
+          ),
+          _matchBonus(
+            idPrefix: 'g6_frac',
+            topic: TopicType.fractions,
+            topicLabelKey: 'realm_fractions_falls',
+            maxValue: 15,
+          ),
+        ],
       ),
       RealmDef(
         id: 'g6_decimals',

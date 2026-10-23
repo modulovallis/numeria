@@ -38,6 +38,13 @@ class AppState extends ChangeNotifier {
 
   final Set<String> completedLevelIds = {};
 
+  /// Best star count (1-3) earned so far per level. Replaying a level never
+  /// lowers this — only an equal-or-better attempt updates it — so kids are
+  /// encouraged to retry a level to improve their stars.
+  final Map<String, int> levelStars = {};
+
+  int starsFor(String levelId) => levelStars[levelId] ?? 0;
+
   bool isLevelUnlocked(List<String> prerequisiteIds) {
     if (prerequisiteIds.isEmpty) return true;
     return prerequisiteIds.every(completedLevelIds.contains);
@@ -62,9 +69,18 @@ class AppState extends ChangeNotifier {
   }
 
   void completeLevel(String levelId, {required int starsEarned}) {
+    final isFirstClear = !completedLevelIds.contains(levelId);
     completedLevelIds.add(levelId);
-    xp += 20 * starsEarned;
-    coins += 10 * starsEarned;
+    final previousBest = levelStars[levelId] ?? 0;
+    if (starsEarned > previousBest) {
+      levelStars[levelId] = starsEarned;
+    }
+    // Full XP/coins on a first clear; smaller "practice" reward on a
+    // replay so kids are encouraged to retry without the rewards feeling
+    // like the main point of replaying.
+    final multiplier = isFirstClear ? 20 : 8;
+    xp += multiplier * starsEarned;
+    coins += (multiplier ~/ 2) * starsEarned;
     if (starsEarned >= 2) {
       confidence = (confidence + 6).clamp(0, 100);
     }

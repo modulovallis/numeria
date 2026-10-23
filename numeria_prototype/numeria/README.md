@@ -81,6 +81,25 @@ generated fresh on every cloud build) rather than hand-authored.
 - **Settings screen** with the language switcher, a demo tier switcher (to
   preview how free-tier gating changes), and real entry points into all four
   Phase 2 features above (no longer "coming soon" teasers).
+- **More exercises per level** — every multiple-choice/True-False/typed-answer
+  level now has 20 questions (up from 5, then 8), based on direct feedback
+  that levels felt short. The bonus matching puzzles use 6 pairs (12 cards)
+  instead, since that format is capped by what comfortably fits one screen.
+  Every level — matching included — generates a brand-new random set each
+  time it's opened or replayed, never reusing the previous attempt's
+  numbers.
+- **Three question formats**, mixed automatically within a strand based on
+  competitor research (Prodigy, SplashLearn and DoodleMaths all vary
+  interaction style, not just content): the original multiple choice, a
+  True/False round, and a typed numeric-answer "boss" challenge. A strand
+  also sometimes gets a bonus tap-to-match puzzle (currently on the
+  multiplication and fractions strands) — see `QuestionKind` in
+  `lib/models/curriculum.dart` and `lib/screens/matching_level_screen.dart`.
+- **Replay any completed level** — tapping a level you've already finished
+  starts a fresh attempt with new random questions; completed levels show
+  your best star score (1-3 ★) and a small replay badge. The Result screen
+  also offers a direct "Play Again" button, and a level can be restarted
+  mid-attempt from its app bar.
 
 Everything is in-memory for this prototype (no persistence, no backend) —
 see Section 11 of the design document for the recommended production
@@ -103,10 +122,10 @@ lib/
   widgets/                     Reusable UI: stat chips, confidence meter,
                                 mascot hint bubble, level map node, parent gate
   screens/                     Splash → Language Select → Home (Kingdoms) →
-                                Strand Select → Level List → Level (gameplay)
-                                → Result, plus Paywall, Settings, Math
-                                Moment, Co-op Quest, Family Challenge and
-                                Offline Manager
+                                Strand Select → Level List → Level or
+                                Matching Puzzle (gameplay) → Result, plus
+                                Paywall, Settings, Math Moment, Co-op Quest,
+                                Family Challenge and Offline Manager
 ```
 
 ## Extending it

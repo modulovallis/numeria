@@ -22,8 +22,96 @@ class MathQuestion {
 /// Section 11.2 of the design document: in production, curriculum writers
 /// would author question templates and this generator would fill them in
 /// with numbers appropriate to the child's mastery level.
+/// A True/False statement derived from a regular [MathQuestion] — see
+/// [QuestionGenerator.generateTrueFalse].
+class TrueFalseQuestion {
+  final String statement;
+  final bool isTrue;
+  final String hint;
+
+  const TrueFalseQuestion({required this.statement, required this.isTrue, required this.hint});
+}
+
+/// One prompt/answer pair for the tap-to-match puzzle (see
+/// [QuestionGenerator.generateMatchingPairs] and MatchingLevelScreen).
+class MatchPair {
+  final String promptLabel;
+  final String answerLabel;
+
+  const MatchPair({required this.promptLabel, required this.answerLabel});
+}
+
 class QuestionGenerator {
   static final Random _rng = Random();
+
+  /// Topics whose prompt is always exactly "... = ?" — safe to turn into a
+  /// True/False statement by substituting a value for the trailing "?".
+  /// Topics with full-sentence prompts (geometry, measurement, data,
+  /// algebra's bare "x + b = c") are deliberately excluded since the
+  /// substitution trick would corrupt their wording.
+  static const Set<TopicType> trueFalseSafeTopics = {
+    TopicType.addition,
+    TopicType.subtraction,
+    TopicType.multiplication,
+    TopicType.division,
+    TopicType.fractions,
+    TopicType.decimals,
+  };
+
+  /// Topics whose correct answer is always a single plain number (not a
+  /// fraction/decimal string), so a numeric keypad can check it exactly.
+  static const Set<TopicType> typedInputSafeTopics = {
+    TopicType.counting,
+    TopicType.addition,
+    TopicType.subtraction,
+    TopicType.multiplication,
+    TopicType.division,
+    TopicType.algebra,
+    TopicType.geometry,
+    TopicType.measurement,
+    TopicType.dataProbability,
+  };
+
+  /// Derives a True/False statement from a freshly generated question by
+  /// substituting either the correct answer (statement is true) or a
+  /// distractor (statement is false) for the question's trailing "?".
+  /// Only call this for a topic in [trueFalseSafeTopics].
+  static TrueFalseQuestion generateTrueFalse(TopicType topic, int maxValue, AppLocalizations t) {
+    final mc = generate(topic, maxValue, t);
+    final correctAnswer = mc.choices[mc.correctIndex];
+    final showCorrect = _rng.nextBool();
+    final shownAnswer = showCorrect
+        ? correctAnswer
+        : mc.choices.firstWhere((c) => c != correctAnswer, orElse: () => correctAnswer);
+    final statement = mc.prompt.replaceFirst('?', shownAnswer);
+    return TrueFalseQuestion(statement: statement, isTrue: showCorrect, hint: mc.hint);
+  }
+
+  /// Generates [pairCount] unique prompt/answer pairs for the matching
+  /// puzzle, reusing the normal question generator for content and
+  /// discarding any accidental duplicate prompt or answer so every card on
+  /// screen is distinct.
+  static List<MatchPair> generateMatchingPairs(
+    TopicType topic,
+    int maxValue,
+    int pairCount,
+    AppLocalizations t,
+  ) {
+    final pairs = <MatchPair>[];
+    final seenPrompts = <String>{};
+    final seenAnswers = <String>{};
+    var attempts = 0;
+    while (pairs.length < pairCount && attempts < pairCount * 20) {
+      attempts++;
+      final q = generate(topic, maxValue, t);
+      final answer = q.choices[q.correctIndex];
+      if (seenPrompts.contains(q.prompt) || seenAnswers.contains(answer)) continue;
+      seenPrompts.add(q.prompt);
+      seenAnswers.add(answer);
+      pairs.add(MatchPair(promptLabel: q.prompt, answerLabel: answer));
+    }
+    return pairs;
+  }
 
   static MathQuestion generate(TopicType topic, int maxValue, AppLocalizations t) {
     switch (topic) {

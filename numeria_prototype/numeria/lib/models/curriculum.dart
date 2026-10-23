@@ -20,6 +20,26 @@ enum TopicType {
   dataProbability,
 }
 
+/// How a level's questions are presented, independent of *what* they ask
+/// about ([TopicType]). Added in response to competitor research (Prodigy,
+/// SplashLearn, DoodleMaths all vary their interaction style, not just
+/// multiple choice) — see Section 7 of the design document.
+enum QuestionKind {
+  /// The original four-button format.
+  multipleChoice,
+
+  /// A statement is shown ("4 + 3 = 8") and the child taps True or False.
+  trueFalse,
+
+  /// The child types the numeric answer instead of picking from choices —
+  /// a bigger challenge, reserved for later tiers.
+  typedInput,
+
+  /// A standalone tap-to-match puzzle (prompts on one side, answers on the
+  /// other) rendered by its own screen rather than the usual question loop.
+  matching,
+}
+
 /// A single playable level inside a Realm.
 ///
 /// Two ways to title a level:
@@ -42,6 +62,7 @@ class LevelDef {
   final int questionCount;
   final List<String> prerequisiteIds;
   final bool isBoss;
+  final QuestionKind kind;
 
   const LevelDef({
     required this.id,
@@ -50,9 +71,10 @@ class LevelDef {
     this.tierNumber = 1,
     required this.topic,
     required this.maxValue,
-    this.questionCount = 5,
+    this.questionCount = 20,
     this.prerequisiteIds = const [],
     this.isBoss = false,
+    this.kind = QuestionKind.multipleChoice,
   });
 
   /// Resolves the on-screen title for this level in the current locale.
@@ -60,6 +82,9 @@ class LevelDef {
     final labelKey = topicLabelKey;
     if (labelKey != null) {
       final topicName = t.t(labelKey);
+      if (kind == QuestionKind.matching) {
+        return t.t('level_match_title', {'topic': topicName});
+      }
       return isBoss
           ? t.t('level_boss_title', {'topic': topicName})
           : t.t('level_tier_title', {'topic': topicName, 'n': tierNumber});

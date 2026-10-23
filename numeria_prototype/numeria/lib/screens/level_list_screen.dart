@@ -7,6 +7,7 @@ import '../models/curriculum.dart';
 import '../state/app_state.dart';
 import '../widgets/level_node.dart';
 import 'level_screen.dart';
+import 'matching_level_screen.dart';
 import 'paywall_screen.dart';
 
 /// Shows every level inside a single chosen strand (exercise type), as a
@@ -38,6 +39,7 @@ class LevelListScreen extends StatelessWidget {
                   level: level,
                   unlocked: unlocked,
                   completed: completed,
+                  stars: appState.starsFor(level.id),
                   color: realm.color,
                   onTap: () => _openLevel(context, level),
                 );
@@ -54,6 +56,12 @@ class LevelListScreen extends StatelessWidget {
     if (appState.freeDailyCapReached) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const PaywallScreen(fromDailyLimit: true)),
+      );
+      return;
+    }
+    if (level.kind == QuestionKind.matching) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => MatchingLevelScreen(level: level, themeColor: realm.color)),
       );
       return;
     }
